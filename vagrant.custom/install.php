@@ -3,9 +3,37 @@
 // includes and defines
 use Bitrix\Main\Application;
 ini_set('output_buffering', false);
+
+// dirty!
+$detectConsoleEncoding = function() {
+    $ret = $output = null;
+    // *nix and MinGW
+    $encoding = exec('locale charmap 2>&1', $output, $ret);
+    if ($ret !== 0)
+    {
+        // Windows
+        $encoding = '866'; // default
+        $chcpOutput = exec('chcp 2>&1', $output, $ret);
+        if ($ret == 0)
+        {
+            $codepage = end(explode(' ', $chcpOutput));
+
+            if ($codepage == '65001')
+            {
+                $encoding = 'utf-8';
+            }
+            elseif (is_numeric($codepage))
+            {
+                $encoding = 'cp' . $codepage;
+            }
+        }
+    }
+    return strtolower($encoding);
+};
+
 // @todo посмотреть какие из этих констант действительно важны
 // @todo разделить на настройки нашего установщика и константы битрикса
-define('CONSOLE_ENCODING', 'utf8');  // @todo кодировка консоли разная в разных средах. её нужно как-то определять и перекодировать сообщения битрикса в эту кодировку (из INSTALL_CHARSET?)
+define('CONSOLE_ENCODING', $detectConsoleEncoding());
 //define('DEBUG_MODE','Y');
 //define("LANGUAGE_ID", 'ru'); //@todo заполняется автоматом из /install.config, можно не определять тут
 //define("INSTALL_CHARSET", 'cp1251'); //@todo заполняется автоматом из /install.config, можно не определять тут
